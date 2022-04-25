@@ -6,7 +6,7 @@ import java.nio.file.*;
 
 public class MyServer {
     public static void main(String[] args) throws Exception {
-        try (ServerSocket serverSocket = new ServerSocket(8080)) {
+        try (ServerSocket serverSocket = new ServerSocket(8088)) {
             while (true) {
                 try (Socket client = serverSocket.accept()) {
                     threadWork(client);
