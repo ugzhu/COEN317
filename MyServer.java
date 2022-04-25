@@ -6,16 +6,36 @@ import java.nio.file.*;
 
 public class MyServer {
     public static void main(String[] args) throws Exception {
-        try (ServerSocket serverSocket = new ServerSocket(8088)) {
+        String root_path;
+        int port;
+        String[] parsedArgs = parseCommandLineArgs(args);
+
+        root_path = parsedArgs[0];
+        port = Integer.parseInt(parsedArgs[1]);
+
+        try (ServerSocket serverSocket = new ServerSocket(port)) {
             while (true) {
                 try (Socket client = serverSocket.accept()) {
-                    threadWork(client);
+                    threadWork(client, root_path);
                 }
             }
         }
     }
 
-    private static void threadWork(Socket client) throws IOException {
+
+    private static String[] parseCommandLineArgs(String[] args){
+        String root_path=" ", port=" ";
+        for (int i=0; i < args.length; i++){
+            if (args[i].equals("-document_root")){
+                root_path = args[i+1];
+            }
+            else if (args[i].equals("-port")) {
+                port = args[i+1];
+            }
+        }
+        return new String[]{root_path, port};
+    }
+    private static void threadWork(Socket client, String root_path) throws IOException {
         BufferedReader br = new BufferedReader(new InputStreamReader(client.getInputStream()));
         StringBuilder requestBuilder = new StringBuilder();
         String line;
@@ -28,14 +48,13 @@ public class MyServer {
         String method = firstLine[0];
         String path = firstLine[1];
 
-        Path filePath = getFilePath(path);
+        Path filePath = getFilePath(path, root_path);
 
 
         if (Files.exists(filePath)) {
             String contentType = getContentType(filePath);
             sendResponse(client, "200 OK", contentType, Files.readAllBytes(filePath));
         } else {
-            byte[] notFoundContent = "<h1>Not found :(</h1>".getBytes();
             sendResponse(client, "404 Not Found", "text/html", "<h1><b>404 Not Found</b></h1>".getBytes());
         }
 
@@ -58,11 +77,11 @@ public class MyServer {
     }
 
 
-    private static Path getFilePath(String path) {
+    private static Path getFilePath(String path, String root_path) {
         if ("/".equals(path)) {
             path = "/index.html";
         }
-        path = "/Users/yzhu/workspace/repo/COEN317/COEN317" + path;
-        return Paths.get(path);
+        String abs_path = root_path + path;
+        return Paths.get(abs_path);
     }
 }
