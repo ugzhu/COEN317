@@ -15,6 +15,7 @@ public class MyServer {
             ServerSocket serverSocket = new ServerSocket(port);
             while (true) {
                 try  {
+                    // multi-threading, spawn a worker thread to handle request
                     Socket client = serverSocket.accept();
                     Worker worker = new Worker(client, root_path);
                     worker.start();
@@ -27,7 +28,7 @@ public class MyServer {
         }
     }
 
-
+    // parse command line args
     private static String[] parseCommandLineArgs(String[] args){
         String root_path=" ", port=" ";
         for (int i=0; i < args.length; i++){
@@ -43,6 +44,7 @@ public class MyServer {
 
 }
 
+// worker thread class for multi-threading
 class Worker extends Thread{
     Socket client;
     String root_path;
@@ -74,7 +76,7 @@ class Worker extends Thread{
             Path filePath = this.getFilePath(path);
             System.out.println(filePath);
 
-
+            // error handling
             if (!method.equals("GET")){
                 this.sendResponse("403 Forbidden", "text/html", "<h1><b>403 Forbidden</b></h1>".getBytes());
             } else if (Files.exists(filePath)) {
@@ -91,6 +93,7 @@ class Worker extends Thread{
         }
     }
 
+    // return response
     private void sendResponse(String status, String contentType, byte[] content)
             throws IOException {
         OutputStream clientOutput = this.client.getOutputStream();
@@ -102,6 +105,7 @@ class Worker extends Thread{
         clientOutput.write(content);
         clientOutput.write("\r\n\r\n".getBytes());
         clientOutput.flush();
+        // close connection after every request
         System.out.println("Closing socket......\r\n");
         System.out.println("------------------------------------------------\r\n");
         this.client.close();
@@ -113,6 +117,7 @@ class Worker extends Thread{
 
 
     private Path getFilePath(String path) {
+        // handling the default page
         if ("/".equals(path)) {
             path = "/index.html";
         }
